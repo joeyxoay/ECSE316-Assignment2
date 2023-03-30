@@ -28,7 +28,7 @@ def modeOption(mode, image):
     elif mode == "2":
         mode2(image)
     elif mode == "3":
-        return
+        mode3(image)
     elif mode == "4":
         return
 
@@ -67,9 +67,44 @@ def mode2(image_path):
     plt2.set_title("Denoised Imaged")
     plt2.imshow(numpy.abs(denoised_img), cmap = 'gray')
     plt.show()
+
+def mode3(image_path):
+    img = plt.imread(image_path)
+    transformed_img = DFT_fast_2d(resizeIMG(img))
+    height, width = transformed_img.shape
+    numPixels = height * width
+    compressions = [5,25,50,80,95]
+    transformed_imgs = []
+    for i in compressions:
+        compressed_img = compression(transformed_img, i, numPixels)
+        inversed_img = DFT_fast_2d_inverse(compressed_img).real
+        transformed_imgs.append(inversed_img)
     
+    #https://matplotlib.org/stable/gallery/subplots_axes_and_figures/subplots_demo.html
+    display, plts = plt.subplots(2,3)
+    display.suptitle("Mode 2 for " + image_path)
+    plts[0, 0].set_title("Original Picture")
+    plts[0, 0].imshow(img, cmap = 'gray')
+    plts[0, 1].set_title("Compression " + str(compressions[0]))
+    plts[0, 1].imshow(transformed_imgs[0], cmap = 'gray')
+    plts[0, 2].set_title("Compression " + str(compressions[1]))
+    plts[0, 2].imshow(transformed_imgs[1], cmap = 'gray')
+    plts[1, 0].set_title("Compression " + str(compressions[2]))
+    plts[1, 0].imshow(transformed_imgs[2], cmap = 'gray')
+    plts[1, 1].set_title("Compression " + str(compressions[3]))
+    plts[1, 1].imshow(transformed_imgs[3], cmap = 'gray')
+    plts[1, 2].set_title("Compression " + str(compressions[4]))
+    plts[1, 2].imshow(transformed_imgs[4], cmap = 'gray')
+    
+    plt.show()
 
-
+def compression(img, compressedNum, numPixels):
+    compression_complement = 100 - compressedNum
+    lower_bound = numpy.percentile(img, compression_complement//2)
+    upper_bound = numpy.percentile(img, 100 - compression_complement//2)
+    compressed_img = img * numpy.logical_or(img <= lower_bound, img >= upper_bound)
+    print("There are " + str(int(numPixels * (compression_complement / 100))) + " non-zero Fourier coefficients when the compression level is " + str(compressedNum))
+    return compressed_img
 
 def resizeIMG(img):
     height, width = img.shape
