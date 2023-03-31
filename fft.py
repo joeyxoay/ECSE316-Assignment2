@@ -7,6 +7,8 @@ import cv2
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import numpy
+import random
+import time
 
 def parsingArg(argv):
     mode = "1"
@@ -30,7 +32,7 @@ def modeOption(mode, image):
     elif mode == "3":
         mode3(image)
     elif mode == "4":
-        return
+        mode4(image)
 
 def mode1(image_path):
     img = plt.imread(image_path)
@@ -98,6 +100,63 @@ def mode3(image_path):
     
     plt.show()
 
+def mode4(image_path):
+    runs = 10
+    tests = []
+    # for i in range(5):
+    #     tests.append(random.randint(2**(5+i), 2**(6+i)))
+
+    # tests = [numpy.random.random((2 ** 5, 2 ** 5)),
+    #          numpy.random.random((2 ** 6, 2 ** 6)),
+    #          numpy.random.random((2 ** 7, 2 ** 7)),
+    #          numpy.random.random((2 ** 8, 2 ** 8))]
+
+    lower_bound = 2**5
+    upper_bound = 2**10
+
+    naive_result = []
+    fast_result = []
+    # for test in tests:
+    while lower_bound <= upper_bound:
+        temp_naive = []
+        temp_fast = []
+        test = numpy.random.rand(lower_bound, lower_bound)
+        print(test)
+        tests.append(test)
+        for i in range(runs):
+            start = time.time()
+            DFT_naive_2d(test)
+            end = time.time()
+            temp_naive.append(start-end)
+
+            start = time.time()
+            DFT_fast_2d(test)
+            end = time.time()
+            temp_fast.append(start-end)
+        
+        print("\nThe naive method's mean: " + str(numpy.mean(temp_naive)))
+        print("The naive method's variance: " + str(numpy.var(temp_naive)))
+        print("The FFT method's mean: " + str(numpy.mean(temp_fast)))
+        print("The FFT method's variance: " + str(numpy.var(temp_fast)))
+        naive_result.append(numpy.mean(temp_naive))
+        fast_result.append(numpy.mean(temp_fast))
+        lower_bound **=2
+
+
+        
+    #https://matplotlib.org/stable/gallery/subplots_axes_and_figures/subplots_demo.html
+    display, (plt1) = plt.subplots(1,1)
+    display.suptitle("Mode 4 for " + image_path)
+    plt1.set_title("Mean Graph for naive method VS FFT method")
+    xpoints = numpy.array(tests)
+    ypoints_naive = numpy.array(naive_result)
+    ypoints_fast = numpy.array(fast_result)
+    plt1.plot(xpoints, ypoints_naive, xpoints, ypoints_fast)
+    plt.show()
+
+
+
+
 def compression(img, compressedNum, numPixels):
     compression_complement = 100 - compressedNum
     lower_bound = numpy.percentile(img, compression_complement//2)
@@ -121,7 +180,7 @@ def closest_power_of_2(num):
     else:
         return 2**math.ceil(math.log2(num))
 
-def DFT_naive(array):
+def DFT_naive_1d(array):
     newArray = numpy.asarray(array, dtype=complex)
     N = newArray.shape[0]
     X = numpy.empty((N, N), dtype=complex)
@@ -133,7 +192,7 @@ def DFT_naive(array):
 
     return output
 
-def DFT_naive_inverse(array):
+def DFT_naive_1d_inverse(array):
     newArray = numpy.asarray(array, dtype=complex)
     N = newArray.shape[0]
     x = numpy.empty((N, N), dtype=complex)
@@ -151,7 +210,7 @@ def DFT_fast_1d(array):
     N = newArray.shape[0]
 
     if(N <= 16):
-        return DFT_naive(newArray)
+        return DFT_naive_1d(newArray)
     else:
         evenArray = newArray[0::2]
         oddArray = newArray[1::2]
@@ -175,7 +234,7 @@ def DFT_fast_1d_inverse(array):
     N = newArray.shape[0]
 
     if(N <= 16):
-        return DFT_naive_inverse(newArray)
+        return DFT_naive_1d_inverse(newArray)
     else:
         evenArray = newArray[0::2]
         oddArray = newArray[1::2]
@@ -204,6 +263,19 @@ def DFT_fast_2d(img):
 
     for row in range(height):
         output[row, :] = DFT_fast_1d(output[row, :])
+
+    return output
+
+def DFT_naive_2d(img):
+    img = numpy.asarray(img, dtype=complex)
+    height, width = img.shape
+    output = numpy.zeros((height, width), dtype=complex)
+
+    for column in range(width):
+        output[:, column] = DFT_naive_1d(img[:,column])
+
+    for row in range(height):
+        output[row, :] = DFT_naive_1d(output[row, :])
 
     return output
 
