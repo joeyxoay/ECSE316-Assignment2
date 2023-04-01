@@ -7,7 +7,6 @@ import cv2
 import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import numpy
-import random
 import time
 
 def parsingArg(argv):
@@ -106,52 +105,62 @@ def mode4(image_path):
     # for i in range(5):
     #     tests.append(random.randint(2**(5+i), 2**(6+i)))
 
-    # tests = [numpy.random.random((2 ** 5, 2 ** 5)),
-    #          numpy.random.random((2 ** 6, 2 ** 6)),
-    #          numpy.random.random((2 ** 7, 2 ** 7)),
-    #          numpy.random.random((2 ** 8, 2 ** 8))]
+    tests = [numpy.random.random((2 ** 5, 2 ** 5)),
+             numpy.random.random((2 ** 6, 2 ** 6)),
+             numpy.random.random((2 ** 7, 2 ** 7)),
+             numpy.random.random((2 ** 8, 2 ** 8))]
+    # print("test size: " + str(len(tests)))
 
-    lower_bound = 2**5
-    upper_bound = 2**10
-
+    testSize = ["2^5 * 2^5", "2^6 * 2^6", "2^7 * 2^7", "2^8 * 2^8"]
     naive_result = []
     fast_result = []
-    # for test in tests:
-    while lower_bound <= upper_bound:
+    naive_error = []
+    fast_error = []
+    for test in tests:
         temp_naive = []
         temp_fast = []
-        test = numpy.random.rand(lower_bound, lower_bound)
-        print(test)
-        tests.append(test)
+        # print(test)
         for i in range(runs):
             start = time.time()
             DFT_naive_2d(test)
             end = time.time()
-            temp_naive.append(start-end)
+            temp_naive.append(end-start)
 
             start = time.time()
             DFT_fast_2d(test)
             end = time.time()
-            temp_fast.append(start-end)
+            temp_fast.append(end-start)
         
+        # print("For " + str(test) + " ===========")
+        print("=====")
         print("\nThe naive method's mean: " + str(numpy.mean(temp_naive)))
         print("The naive method's variance: " + str(numpy.var(temp_naive)))
         print("The FFT method's mean: " + str(numpy.mean(temp_fast)))
         print("The FFT method's variance: " + str(numpy.var(temp_fast)))
-        naive_result.append(numpy.mean(temp_naive))
-        fast_result.append(numpy.mean(temp_fast))
-        lower_bound **=2
+        print("The naive error is: " + str(numpy.std(temp_naive)/math.sqrt(runs)))
+        print("The fast error is: " + str(numpy.std(temp_fast)/math.sqrt(runs)))
+        naive_result.append(sum(temp_naive) / runs)
+        fast_result.append(sum(temp_fast) / runs)
+        #https://labwrite.ncsu.edu/res/gt/gt-stat-home.html
+        naive_error.append(numpy.std(temp_naive)/math.sqrt(runs))
+        fast_error.append(numpy.std(temp_fast)/math.sqrt(runs))
+        # lower_bound **=2
 
 
-        
-    #https://matplotlib.org/stable/gallery/subplots_axes_and_figures/subplots_demo.html
-    display, (plt1) = plt.subplots(1,1)
-    display.suptitle("Mode 4 for " + image_path)
-    plt1.set_title("Mean Graph for naive method VS FFT method")
-    xpoints = numpy.array(tests)
-    ypoints_naive = numpy.array(naive_result)
-    ypoints_fast = numpy.array(fast_result)
-    plt1.plot(xpoints, ypoints_naive, xpoints, ypoints_fast)
+    #https://jakevdp.github.io/PythonDataScienceHandbook/04.01-simple-line-plots.html
+    # display, (plt1) = plt.subplots(1,1)
+    plt1 = plt.figure()
+    plt1.suptitle("Mode 4 for " + image_path)
+    plt.title("Average runtime (in seconds) comparison between naive method and FFT method")
+    plt.xlabel("Problem Size")
+    plt.ylabel("Average Runtime (s)")
+    plt.errorbar(x=testSize, y=naive_result, yerr=naive_error, label='naive')
+    plt.errorbar(x=testSize, y=fast_result, yerr=fast_error, label='fast')
+    plt.legend(loc='upper left', numpoints=1)
+    # xpoints = numpy.array(tests)
+    # ypoints_naive = numpy.array(naive_result)
+    # ypoints_fast = numpy.array(fast_result)
+    # plt1.plot(xpoints, ypoints_naive, xpoints, ypoints_fast)
     plt.show()
 
 
