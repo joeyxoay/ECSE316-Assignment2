@@ -31,7 +31,7 @@ def modeOption(mode, image):
     elif mode == "3":
         mode3(image)
     elif mode == "4":
-        mode4(image)
+        mode4()
 
 def mode1(image_path):
     img = plt.imread(image_path).astype(float)
@@ -84,7 +84,7 @@ def mode3(image_path):
     transformed_img = DFT_fast_2d(resizeIMG(img))
     height, width = transformed_img.shape
     numPixels = height * width
-    compressions = [5,25,50,80,95]
+    compressions = [19, 38, 57, 76, 95]
     transformed_imgs = []
     for i in compressions:
         compressed_img = compression(transformed_img, i, numPixels)
@@ -114,7 +114,7 @@ def mode3(image_path):
     
     plt.show()
 
-def mode4(image_path):
+def mode4():
     runs = 10
     tests = []
     tests = [numpy.random.random((2 ** 5, 2 ** 5)),
@@ -130,7 +130,6 @@ def mode4(image_path):
     for x in range(len(tests)):
         temp_naive = []
         temp_fast = []
-        # print(test)
         test = tests[x]
         for i in range(runs):
             start = time.time()
@@ -143,7 +142,6 @@ def mode4(image_path):
             end = time.time()
             temp_fast.append(end-start)
         
-        # print("For " + str(test) + " ===========")
         print("\n=== " + testSize[x] + " ===")
         print("The naive method's mean: " + str(numpy.mean(temp_naive)))
         print("The naive method's variance: " + str(numpy.var(temp_naive)))
@@ -151,28 +149,23 @@ def mode4(image_path):
         print("The FFT method's variance: " + str(numpy.var(temp_fast)))
         print("The naive error is: " + str(numpy.std(temp_naive)/math.sqrt(runs)))
         print("The fast error is: " + str(numpy.std(temp_fast)/math.sqrt(runs)))
-        naive_result.append(sum(temp_naive) / runs)
-        fast_result.append(sum(temp_fast) / runs)
+        naive_result.append(numpy.mean(temp_naive))
+        fast_result.append(numpy.mean(temp_fast))
         #https://labwrite.ncsu.edu/res/gt/gt-stat-home.html
         naive_error.append(numpy.std(temp_naive)/math.sqrt(runs))
         fast_error.append(numpy.std(temp_fast)/math.sqrt(runs))
-        # lower_bound **=2
 
 
     #https://jakevdp.github.io/PythonDataScienceHandbook/04.01-simple-line-plots.html
     # display, (plt1) = plt.subplots(1,1)
     plt1 = plt.figure()
-    plt1.suptitle("Mode 4 for " + image_path)
-    plt.title("Average runtime (in seconds) comparison between naive method and FFT method")
+    plt1.suptitle("Mode 4")
+    plt.title("Mean runtime (in seconds) comparison between naive method and FFT method")
     plt.xlabel("Problem Size")
-    plt.ylabel("Average Runtime (s)")
+    plt.ylabel("Mean Runtime (s)")
     plt.errorbar(x=testSize, y=naive_result, yerr=naive_error, label='naive')
     plt.errorbar(x=testSize, y=fast_result, yerr=fast_error, label='fast')
     plt.legend(loc='upper left', numpoints=1)
-    # xpoints = numpy.array(tests)
-    # ypoints_naive = numpy.array(naive_result)
-    # ypoints_fast = numpy.array(fast_result)
-    # plt1.plot(xpoints, ypoints_naive, xpoints, ypoints_fast)
     plt.show()
 
 
@@ -317,14 +310,5 @@ def DFT_fast_2d_inverse(img):
 
 
 if __name__ == "__main__":
-    # print(f"Arguments count: {len(sys.argv)}")
-    # print(f"Name of the script      : {sys.argv[0]=}")
-    # print(f"Arguments of the script : {sys.argv[1:]=}")
-
     mode, image = parsingArg(sys.argv)
     modeOption(mode, image)
-    # arr = [1,2,3,4,5]
-    # print(DFFX(arr, 3))
-
-
-    # print("Outside function. mode is " + mode)
