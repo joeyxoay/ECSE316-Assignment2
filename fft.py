@@ -34,43 +34,53 @@ def modeOption(mode, image):
         mode4(image)
 
 def mode1(image_path):
-    img = plt.imread(image_path)
+    img = plt.imread(image_path).astype(float)
     transformed_img = DFT_fast_2d(resizeIMG(img))
 
     #https://matplotlib.org/stable/gallery/subplots_axes_and_figures/subplots_demo.html
     display, (plt1, plt2) = plt.subplots(1,2)
     display.suptitle("Mode 1 for " + image_path)
     plt1.set_title("Original Image")
-    plt1.imshow(img)
+    plt1.imshow(img, plt.cm.gray)
     plt2.set_title("Fourier Transformed Image")
     plt2.imshow(numpy.abs(transformed_img), norm=colors.LogNorm())
     plt.show()
 
 def mode2(image_path):
-    img = plt.imread(image_path)
-    transformed_img = DFT_fast_2d(resizeIMG(img))
+    img = plt.imread(image_path).astype(float)
+    resized_imaged = resizeIMG(img)
+    transformed_img = DFT_fast_2d(resized_imaged)
     height, width = transformed_img.shape
+    #https://scipy-lectures.org/intro/scipy/auto_examples/solutions/plot_fft_image_denoise.html
     freq = 0.10
     height_lower_bound = freq * height
     height_upper_bound = (1-freq) * height
     width_lower_bound = freq * width
     width_upper_bound = (1-freq) * width
-    transformed_img[int(height_lower_bound):int(height_upper_bound),:] = 0
-    transformed_img[:int(width_lower_bound):int(width_upper_bound)] = 0
-    
+    transformed_img[int(height_lower_bound):int(height_upper_bound)] = 0
+    transformed_img[:,int(width_lower_bound):int(width_upper_bound)] = 0
+
+    totalPixels = height * width
+    original_numOfZeros = numpy.count_nonzero(resized_imaged)
+    numOfZeros = totalPixels - numpy.count_nonzero(transformed_img) - original_numOfZeros
+
     denoised_img = DFT_fast_2d_inverse(transformed_img).real
 
     #https://matplotlib.org/stable/gallery/subplots_axes_and_figures/subplots_demo.html
     display, (plt1, plt2) = plt.subplots(1,2)
     display.suptitle("Mode 2 for " + image_path)
     plt1.set_title("Original Image")
-    plt1.imshow(img)
+    plt1.imshow(img, plt.cm.gray)
+    # plt1.imshow(numpy.abs(transformed_img), norm=colors.LogNorm(), cmap = "gray")
     plt2.set_title("Denoised Imaged")
-    plt2.imshow(numpy.abs(denoised_img), cmap = 'gray')
+    plt2.imshow(numpy.abs(denoised_img), cmap = "gray")
+
+    print("There are " + str(numOfZeros) + " number of zeros, which is " + str((numOfZeros / totalPixels) * 100 ) + "% of the picture")
+
     plt.show()
 
 def mode3(image_path):
-    img = plt.imread(image_path)
+    img = plt.imread(image_path).astype(float)
     transformed_img = DFT_fast_2d(resizeIMG(img))
     height, width = transformed_img.shape
     numPixels = height * width
@@ -79,6 +89,10 @@ def mode3(image_path):
     for i in compressions:
         compressed_img = compression(transformed_img, i, numPixels)
         inversed_img = DFT_fast_2d_inverse(compressed_img).real
+        #https://stackoverflow.com/questions/56348443/how-to-extract-from-a-numpy-array-all-the-zero-and-non-zero-values-in-a-new-arra
+        non_zero_values = compressed_img[numpy.where(compressed_img != 0)]
+        #https://numpy.org/doc/stable/reference/generated/numpy.savetxt.html
+        numpy.savetxt(f"mode3_" + str(i) + ".txt", non_zero_values)
         transformed_imgs.append(inversed_img)
     
     #https://matplotlib.org/stable/gallery/subplots_axes_and_figures/subplots_demo.html
@@ -97,29 +111,27 @@ def mode3(image_path):
     plts[1, 2].set_title("Compression " + str(compressions[4]))
     plts[1, 2].imshow(transformed_imgs[4], cmap = 'gray')
     
+    
     plt.show()
 
 def mode4(image_path):
     runs = 10
     tests = []
-    # for i in range(5):
-    #     tests.append(random.randint(2**(5+i), 2**(6+i)))
-
     tests = [numpy.random.random((2 ** 5, 2 ** 5)),
              numpy.random.random((2 ** 6, 2 ** 6)),
              numpy.random.random((2 ** 7, 2 ** 7)),
              numpy.random.random((2 ** 8, 2 ** 8))]
-    # print("test size: " + str(len(tests)))
 
     testSize = ["2^5 * 2^5", "2^6 * 2^6", "2^7 * 2^7", "2^8 * 2^8"]
     naive_result = []
     fast_result = []
     naive_error = []
     fast_error = []
-    for test in tests:
+    for x in range(len(tests)):
         temp_naive = []
         temp_fast = []
         # print(test)
+        test = tests[x]
         for i in range(runs):
             start = time.time()
             DFT_naive_2d(test)
@@ -132,8 +144,8 @@ def mode4(image_path):
             temp_fast.append(end-start)
         
         # print("For " + str(test) + " ===========")
-        print("=====")
-        print("\nThe naive method's mean: " + str(numpy.mean(temp_naive)))
+        print("\n=== " + testSize[x] + " ===")
+        print("The naive method's mean: " + str(numpy.mean(temp_naive)))
         print("The naive method's variance: " + str(numpy.var(temp_naive)))
         print("The FFT method's mean: " + str(numpy.mean(temp_fast)))
         print("The FFT method's variance: " + str(numpy.var(temp_fast)))
