@@ -1,6 +1,3 @@
-#print ("helloWorld")
-
-# main.py
 import sys
 import math
 import cv2
@@ -35,14 +32,14 @@ def modeOption(mode, image):
 
 def mode1(image_path):
     img = plt.imread(image_path).astype(float)
-    transformed_img = DFT_fast_2d(resizeIMG(img))
+    transformed_img = FFT_2d(resizeIMG(img))
 
     #https://matplotlib.org/stable/gallery/subplots_axes_and_figures/subplots_demo.html
     display, (plt1, plt2) = plt.subplots(1,2)
     display.suptitle("Mode 1 for " + image_path)
     plt1.set_title("Original Image")
     plt1.imshow(img, plt.cm.gray)
-    plt2.set_title("Fourier Transformed Image")
+    plt2.set_title("Fourier Transformed Image (Log Scaled)")
     im2 = plt2.imshow(numpy.abs(transformed_img), norm=colors.LogNorm())
     fig2 = plt2.get_figure()
     fig2.colorbar(im2)
@@ -53,7 +50,7 @@ def mode2(image_path):
     img = plt.imread(image_path).astype(float)
     resized_imaged = resizeIMG(img)
     
-    transformed_img = DFT_fast_2d(resized_imaged)
+    transformed_img = FFT_2d(resized_imaged)
     height, width = transformed_img.shape
     #https://scipy-lectures.org/intro/scipy/auto_examples/solutions/plot_fft_image_denoise.html
     freq = 0.10
@@ -67,15 +64,15 @@ def mode2(image_path):
     totalPixels = height * width
     original_numOfZeros = totalPixels - numpy.count_nonzero(resized_imaged)
     numOfZeros = totalPixels - numpy.count_nonzero(transformed_img) - original_numOfZeros
-
-    denoised_img = DFT_fast_2d_inverse(transformed_img).real
+        
+    denoised_img = FFT_2d_inverse(transformed_img).real
 
     #https://matplotlib.org/stable/gallery/subplots_axes_and_figures/subplots_demo.html
     display, (plt1, plt2) = plt.subplots(1,2)
     display.suptitle("Mode 2 for " + image_path)
     plt1.set_title("Original Image")
     plt1.imshow(img, plt.cm.gray)
-    # plt1.imshow(numpy.abs(transformed_img), norm=colors.LogNorm(), cmap = "gray")
+    # plt1.imshow(numpy.abs(before_inverse), norm=colors.LogNorm(), cmap = "gray")
     plt2.set_title("Denoised Imaged")
     plt2.imshow(numpy.abs(denoised_img), cmap = "gray")
 
@@ -85,15 +82,14 @@ def mode2(image_path):
 
 def mode3(image_path):
     img = plt.imread(image_path).astype(float)
-    transformed_img = DFT_fast_2d(resizeIMG(img))
-    # numpy.savetxt(f"mode3_0.txt", transformed_img.replace(" ", "\n"))
+    transformed_img = FFT_2d(resizeIMG(img))
     height, width = transformed_img.shape
     numPixels = height * width
     compressions = [0, 19, 38, 57, 76, 95]
     transformed_imgs = []
     for i in compressions:
         compressed_img = compression(transformed_img, i, numPixels)
-        inversed_img = DFT_fast_2d_inverse(compressed_img).real
+        inversed_img = FFT_2d_inverse(compressed_img).real
         #https://stackoverflow.com/questions/56348443/how-to-extract-from-a-numpy-array-all-the-zero-and-non-zero-values-in-a-new-arra
         non_zero_values = compressed_img[numpy.where(compressed_img != 0)]
         #https://numpy.org/doc/stable/reference/generated/numpy.savetxt.html
@@ -121,7 +117,6 @@ def mode3(image_path):
 
 def mode4():
     runs = 10
-    tests = []
     tests = [numpy.random.random((2 ** 5, 2 ** 5)),
              numpy.random.random((2 ** 6, 2 ** 6)),
              numpy.random.random((2 ** 7, 2 ** 7)),
@@ -138,12 +133,12 @@ def mode4():
         test = tests[x]
         for i in range(runs):
             start = time.time()
-            DFT_naive_2d(test)
+            DFT_2d(test)
             end = time.time()
             temp_naive.append(end-start)
 
             start = time.time()
-            DFT_fast_2d(test)
+            FFT_2d(test)
             end = time.time()
             temp_fast.append(end-start)
         
@@ -173,9 +168,6 @@ def mode4():
     plt.legend(loc='upper left', numpoints=1)
     plt.show()
 
-
-
-
 def compression(img, compressedNum, numPixels):
     compression_complement = 100 - compressedNum
     lower_bound = numpy.percentile(img, compression_complement//2)
@@ -199,7 +191,7 @@ def closest_power_of_2(num):
     else:
         return 2**math.ceil(math.log2(num))
 
-def DFT_naive_1d(array):
+def DFT_1d(array):
     newArray = numpy.asarray(array, dtype=complex)
     N = newArray.shape[0]
     X = numpy.empty((N, N), dtype=complex)
@@ -211,7 +203,7 @@ def DFT_naive_1d(array):
 
     return output
 
-def DFT_naive_1d_inverse(array):
+def DFT_1d_inverse(array):
     newArray = numpy.asarray(array, dtype=complex)
     N = newArray.shape[0]
     x = numpy.empty((N, N), dtype=complex)
@@ -223,19 +215,19 @@ def DFT_naive_1d_inverse(array):
 
     return output
 
-def DFT_fast_1d(array):
+def FFT_1d(array):
     #https://en.wikipedia.org/wiki/Cooley–Tukey_FFT_algorithm
     newArray = numpy.asarray(array, dtype=complex)
     N = newArray.shape[0]
 
     if(N <= 16):
-        return DFT_naive_1d(newArray)
+        return DFT_1d(newArray)
     else:
         evenArray = newArray[0::2]
         oddArray = newArray[1::2]
 
-        evenNewArr = DFT_fast_1d(evenArray)
-        oddNewArr = DFT_fast_1d(oddArray)
+        evenNewArr = FFT_1d(evenArray)
+        oddNewArr = FFT_1d(oddArray)
         output = numpy.zeros(N, dtype=complex)
 
         for n in range(N//2):
@@ -247,19 +239,19 @@ def DFT_fast_1d(array):
             
         return output
 
-def DFT_fast_1d_inverse(array):
+def FFT_1d_inverse(array):
     #https://en.wikipedia.org/wiki/Cooley–Tukey_FFT_algorithm
     newArray = numpy.asarray(array, dtype=complex)
     N = newArray.shape[0]
 
     if(N <= 16):
-        return DFT_naive_1d_inverse(newArray)
+        return DFT_1d_inverse(newArray)
     else:
         evenArray = newArray[0::2]
         oddArray = newArray[1::2]
 
-        evenNewArr = DFT_fast_1d_inverse(evenArray)
-        oddNewArr = DFT_fast_1d_inverse(oddArray)
+        evenNewArr = FFT_1d_inverse(evenArray)
+        oddNewArr = FFT_1d_inverse(oddArray)
         output = numpy.zeros(N, dtype=complex)
 
         for n in range(N//2):
@@ -272,46 +264,44 @@ def DFT_fast_1d_inverse(array):
         return output
 
 
-def DFT_fast_2d(img):
+def FFT_2d(img):
     img = numpy.asarray(img, dtype=complex)
     height, width = img.shape
     output = numpy.zeros((height, width), dtype=complex)
 
     for column in range(width):
-        output[:, column] = DFT_fast_1d(img[:,column])
+        output[:, column] = FFT_1d(img[:,column])
 
     for row in range(height):
-        output[row, :] = DFT_fast_1d(output[row, :])
+        output[row, :] = FFT_1d(output[row, :])
 
     return output
 
-def DFT_naive_2d(img):
+def DFT_2d(img):
     img = numpy.asarray(img, dtype=complex)
     height, width = img.shape
     output = numpy.zeros((height, width), dtype=complex)
 
     for column in range(width):
-        output[:, column] = DFT_naive_1d(img[:,column])
+        output[:, column] = DFT_1d(img[:,column])
 
     for row in range(height):
-        output[row, :] = DFT_naive_1d(output[row, :])
+        output[row, :] = DFT_1d(output[row, :])
 
     return output
 
-def DFT_fast_2d_inverse(img):
+def FFT_2d_inverse(img):
     img = numpy.asarray(img, dtype=complex)
     height, width = img.shape
     output = numpy.zeros((height, width), dtype=complex)
 
     for column in range(width):
-        output[:, column] = DFT_fast_1d_inverse(img[:,column])
+        output[:, column] = FFT_1d_inverse(img[:,column])
 
     for row in range(height):
-        output[row, :] = DFT_fast_1d_inverse(output[row, :])
+        output[row, :] = FFT_1d_inverse(output[row, :])
 
     return output
-
-
 
 
 if __name__ == "__main__":
