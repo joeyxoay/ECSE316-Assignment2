@@ -43,12 +43,16 @@ def mode1(image_path):
     plt1.set_title("Original Image")
     plt1.imshow(img, plt.cm.gray)
     plt2.set_title("Fourier Transformed Image")
-    plt2.imshow(numpy.abs(transformed_img), norm=colors.LogNorm())
+    im2 = plt2.imshow(numpy.abs(transformed_img), norm=colors.LogNorm())
+    fig2 = plt2.get_figure()
+    fig2.colorbar(im2)
     plt.show()
 
 def mode2(image_path):
+    #https://stackoverflow.com/questions/2440504/noise-estimation-noise-measurement-in-image
     img = plt.imread(image_path).astype(float)
     resized_imaged = resizeIMG(img)
+    
     transformed_img = DFT_fast_2d(resized_imaged)
     height, width = transformed_img.shape
     #https://scipy-lectures.org/intro/scipy/auto_examples/solutions/plot_fft_image_denoise.html
@@ -61,7 +65,7 @@ def mode2(image_path):
     transformed_img[:,int(width_lower_bound):int(width_upper_bound)] = 0
 
     totalPixels = height * width
-    original_numOfZeros = numpy.count_nonzero(resized_imaged)
+    original_numOfZeros = totalPixels - numpy.count_nonzero(resized_imaged)
     numOfZeros = totalPixels - numpy.count_nonzero(transformed_img) - original_numOfZeros
 
     denoised_img = DFT_fast_2d_inverse(transformed_img).real
@@ -82,9 +86,10 @@ def mode2(image_path):
 def mode3(image_path):
     img = plt.imread(image_path).astype(float)
     transformed_img = DFT_fast_2d(resizeIMG(img))
+    # numpy.savetxt(f"mode3_0.txt", transformed_img.replace(" ", "\n"))
     height, width = transformed_img.shape
     numPixels = height * width
-    compressions = [19, 38, 57, 76, 95]
+    compressions = [0, 19, 38, 57, 76, 95]
     transformed_imgs = []
     for i in compressions:
         compressed_img = compression(transformed_img, i, numPixels)
@@ -97,20 +102,20 @@ def mode3(image_path):
     
     #https://matplotlib.org/stable/gallery/subplots_axes_and_figures/subplots_demo.html
     display, plts = plt.subplots(2,3)
-    display.suptitle("Mode 2 for " + image_path)
-    plts[0, 0].set_title("Original Picture")
-    plts[0, 0].imshow(img, cmap = 'gray')
-    plts[0, 1].set_title("Compression " + str(compressions[0]))
-    plts[0, 1].imshow(transformed_imgs[0], cmap = 'gray')
-    plts[0, 2].set_title("Compression " + str(compressions[1]))
-    plts[0, 2].imshow(transformed_imgs[1], cmap = 'gray')
-    plts[1, 0].set_title("Compression " + str(compressions[2]))
-    plts[1, 0].imshow(transformed_imgs[2], cmap = 'gray')
-    plts[1, 1].set_title("Compression " + str(compressions[3]))
-    plts[1, 1].imshow(transformed_imgs[3], cmap = 'gray')
-    plts[1, 2].set_title("Compression " + str(compressions[4]))
-    plts[1, 2].imshow(transformed_imgs[4], cmap = 'gray')
-    
+    display.suptitle("Mode 3 for " + image_path)
+    plts[0, 0].set_title("Original Picture (resized)")
+    # plts[0, 0].imshow(img, cmap = 'gray')
+    plts[0, 0].imshow(transformed_imgs[0], cmap = 'gray')
+    plts[0, 1].set_title("Compression " + str(compressions[1]))
+    plts[0, 1].imshow(transformed_imgs[1], cmap = 'gray')
+    plts[0, 2].set_title("Compression " + str(compressions[2]))
+    plts[0, 2].imshow(transformed_imgs[2], cmap = 'gray')
+    plts[1, 0].set_title("Compression " + str(compressions[3]))
+    plts[1, 0].imshow(transformed_imgs[3], cmap = 'gray')
+    plts[1, 1].set_title("Compression " + str(compressions[4]))
+    plts[1, 1].imshow(transformed_imgs[4], cmap = 'gray')
+    plts[1, 2].set_title("Compression " + str(compressions[5]))
+    plts[1, 2].imshow(transformed_imgs[5], cmap = 'gray')
     
     plt.show()
 
